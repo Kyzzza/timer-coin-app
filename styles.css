@@ -27,44 +27,20 @@ body, html {
     width: 200px;
     height: 200px;
     border-radius: 50%;
-    background-color: yellow;
+    background-color: green;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 24px;
-    cursor: pointer;
-    color: black;
-    user-select: none;
-}
-
-#timer {
     font-size: 32px;
-    font-weight: bold;
-}
-body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f4f4f4;
-}
-
-.container {
-    text-align: center;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
-button {
-    padding: 10px 20px;
-    font-size: 16px;
     cursor: pointer;
+    color: white;
+    user-select: none;
+    margin: 0 auto;
+    position: relative;
 }
 
-ul {
-    list-style-type: none;
-    padding: 0;
+.balance {
+    margin-top: 20px;
+    font-size: 24px;
+    color: white;
 }
