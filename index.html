@@ -3,25 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Монеты с таймером</title>
+    <title>Монетный счетчик</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
     <div class="container">
         <div class="coin-counter">
-            Ваш ID: <span id="userId">---</span>
-        </div>
-        <div class="coin-counter">
             Баланс: <span id="coinCount">0</span> монет
         </div>
-        <div class="button-container">
-            <button id="coinButton" onclick="startTimer()">Получить 100 монет</button>
-        </div>
-        <div class="timer">
-            Время до следующего нажатия: <span id="timer">0</span> секунд
-        </div>
+        <button id="coinButton" onclick="handleButtonClick()">Получить 100 монет</button>
     </div>
 
     <script src="script.js"></script>
 </body>
 </html>
+
