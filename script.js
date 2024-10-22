@@ -1,104 +1,81 @@
+// Firebase конфигурация (замените на свои данные)
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+// Инициализация Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+let userId = getUserId();
 let coinCount = 0;
-let cooldown = 10; // 10 секунд кулдаун
-let timer = 0;
-let canCollect = true;
-let userId = getUserId(); // Получаем или создаем уникальный ID пользователя
+let canClick = true;
+let cooldown = 10; // 10 секунд
 
 // DOM элементы
-let coinCountElement = document.getElementById('coinCount');
-let timerElement = document.getElementById('timer');
-let coinButton = document.getElementById('coinButton');
-let userIdElement = document.getElementById('userId');
+const coinCountElement = document.getElementById('coinCount');
+const coinButton = document.getElementById('coinButton');
 
-// Инициализация данных из localStorage
-initializeData();
-
-// Отображаем ID пользователя
-userIdElement.textContent = userId;
-
-// Получаем или создаем уникальный ID пользователя
+// Получаем ID пользователя или создаем новый
 function getUserId() {
     let storedId = localStorage.getItem('userId');
-    if (storedId) {
-        return storedId;
-    } else {
-        let newId = 'user-' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('userId', newId);
-        return newId;
-    }
+    if (storedId) return storedId;
+
+    const newId = 'user-' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('userId', newId);
+    return newId;
 }
 
-// Сохранение данных (счетчик монет и таймер) в localStorage
-function saveData() {
-    localStorage.setItem('coinCount', coinCount);
-    localStorage.setItem('timer', timer);
-    localStorage.setItem('canCollect', canCollect);
-}
-
-// Инициализация данных из localStorage
-function initializeData() {
-    // Восстанавливаем баланс монет
-    let storedCoinCount = localStorage.getItem('coinCount');
-    if (storedCoinCount) {
-        coinCount = parseInt(storedCoinCount);
-        coinCountElement.textContent = coinCount;
-    }
-
-    // Восстанавливаем таймер
-    let storedTimer = localStorage.getItem('timer');
-    if (storedTimer) {
-        timer = parseInt(storedTimer);
-        if (timer > 0) {
-            canCollect = false;
-            coinButton.disabled = true;
-            resumeTimer();
+// Загружаем прогресс пользователя из Firebase
+function loadUserProgress() {
+    database.ref('users/' + userId).once('value').then((snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            coinCount = data.coinCount || 0;
+            coinCountElement.textContent = coinCount;
         }
-    }
-
-    // Восстанавливаем состояние кнопки
-    let storedCanCollect = localStorage.getItem('canCollect');
-    if (storedCanCollect === 'false') {
-        canCollect = false;
-        coinButton.disabled = true;
-    }
+    });
 }
 
-// Запуск таймера и блокировка кнопки
-function startTimer() {
-    if (canCollect) {
-        // Начисляем 100 монет
+// Сохраняем прогресс пользователя в Firebase
+function saveUserProgress() {
+    database.ref('users/' + userId).set({
+        coinCount: coinCount
+    });
+}
+
+// Обработка нажатия на кнопку
+function handleButtonClick() {
+    if (canClick) {
         coinCount += 100;
         coinCountElement.textContent = coinCount;
+        saveUserProgress();
 
-        // Сохранение состояния монет
-        saveData();
-
-        // Отключаем кнопку и запускаем таймер
-        canCollect = false;
+        canClick = false;
         coinButton.disabled = true;
-        timer = cooldown;
-        timerElement.textContent = timer;
-
-        // Сохраняем состояние таймера
-        saveData();
-
-        resumeTimer();
+        startCooldown();
     }
 }
 
-// Продолжение работы таймера (при перезагрузке страницы)
-function resumeTimer() {
-    let timerInterval = setInterval(() => {
+// Запуск кулдауна
+function startCooldown() {
+    let timer = cooldown;
+    const interval = setInterval(() => {
         timer--;
-        timerElement.textContent = timer;
-        saveData(); // Сохраняем каждое обновление таймера
-
         if (timer <= 0) {
-            clearInterval(timerInterval);
-            canCollect = true;
+            clearInterval(interval);
+            canClick = true;
             coinButton.disabled = false;
-            timerElement.textContent = '0';
-            saveData();
         }
     }, 1000);
 }
+
+// Загрузка прогресса при открытии страницы
+loadUserProgress();
+
