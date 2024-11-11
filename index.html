@@ -1,24 +1,14 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Монетный счетчик</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-</head>
-<body>
-    <div class="container">
-        <div class="coin-counter">
-            Баланс: <span id="coinCount">0</span> монет
-        </div>
-        <button id="coinButton" onclick="handleButtonClick()">Получить 100 монет</button>
-    </div>
-
-    <script src="script.js"></script>
-</body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ton Sample TWA</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
-const app = initializeApp ( firebaseConfig );
-const analytics = getAnalytics ( app );
 
