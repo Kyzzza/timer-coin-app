@@ -1,81 +1,89 @@
-// Firebase конфигурация (замените на свои данные)
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
+import axios from "axios";
+import { createInterface } from "readline";
+import fs from "fs";
+import { promisify } from "util";
 
-// Инициализация Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const rl = createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
-let userId = getUserId();
-let coinCount = 0;
-let canClick = true;
-let cooldown = 10; // 10 секунд
+const question = (question) =>
+  new Promise((resolve) => rl.question(question, resolve));
 
-// DOM элементы
-const coinCountElement = document.getElementById('coinCount');
-const coinButton = document.getElementById('coinButton');
-
-// Получаем ID пользователя или создаем новый
-function getUserId() {
-    let storedId = localStorage.getItem('userId');
-    if (storedId) return storedId;
-
-    const newId = 'user-' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('userId', newId);
-    return newId;
+function exitError(error) {
+  console.error(`Error! ${error}`);
+  process.exit(1);
 }
 
-// Загружаем прогресс пользователя из Firebase
-function loadUserProgress() {
-    database.ref('users/' + userId).once('value').then((snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            coinCount = data.coinCount || 0;
-            coinCountElement.textContent = coinCount;
-        }
-    });
-}
+const banner = `
+████████╗██╗    ██╗ █████╗     ████████╗███████╗███╗   ███╗██████╗ ██╗      █████╗ ████████╗███████╗
+╚══██╔══╝██║    ██║██╔══██╗    ╚══██╔══╝██╔════╝████╗ ████║██╔══██╗██║     ██╔══██╗╚══██╔══╝██╔════╝
+   ██║   ██║ █╗ ██║███████║       ██║   █████╗  ██╔████╔██║██████╔╝██║     ███████║   ██║   █████╗  
+   ██║   ██║███╗██║██╔══██║       ██║   ██╔══╝  ██║╚██╔╝██║██╔═══╝ ██║     ██╔══██║   ██║   ██╔══╝  
+   ██║   ╚███╔███╔╝██║  ██║       ██║   ███████╗██║ ╚═╝ ██║██║     ███████╗██║  ██║   ██║   ███████╗
+   ╚═╝    ╚══╝╚══╝ ╚═╝  ╚═╝       ╚═╝   ╚══════╝╚═╝     ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
+`;
 
-// Сохраняем прогресс пользователя в Firebase
-function saveUserProgress() {
-    database.ref('users/' + userId).set({
-        coinCount: coinCount
-    });
-}
+console.log(banner);
 
-// Обработка нажатия на кнопку
-function handleButtonClick() {
-    if (canClick) {
-        coinCount += 100;
-        coinCountElement.textContent = coinCount;
-        saveUserProgress();
+let githubUsername, githubRepo, botUsername;
 
-        canClick = false;
-        coinButton.disabled = true;
-        startCooldown();
+(async () => {
+  try {
+    const file = fs.readFileSync(".git/config").toString();
+    const url = file.match(/url = (.*)/)[1];
+    console.log(url);
+    const params = url.match(/github.com[/:]([^/]*)\/(.*)\.git/);
+    githubUsername = params[1];
+    githubRepo = params[2];
+  } catch (e) {}
+
+  const accessToken = await question("Enter your bot access token: ");
+  if (!accessToken?.length > 0) exitError("Token is required");
+
+  const githubUsernameQ = await question(
+    `Enter your github username${
+      githubUsername ? ` (${githubUsername})` : ``
+    }: `
+  );
+  githubUsername = githubUsernameQ || githubUsername;
+  if (!githubUsername?.length > 0) exitError("Github username is required");
+
+  const githubRepoQ = await question(
+    `Enter your forked repo name${githubRepo ? ` (${githubRepo})` : ``}: `
+  );
+  githubRepo = githubRepoQ || githubRepo;
+  if (!githubRepo?.length > 0) exitError("Repo name is required");
+
+  const getBot = await axios.get(
+    `https://api.telegram.org/bot${accessToken}/getMe`
+  ).catch(exitError);
+
+  botUsername = getBot.data.result.username;
+  const url = `https://${githubUsername}.github.io/${githubRepo}`;
+
+  console.log(`\n\nSetting bot ${botUsername} webapp url to ${url}`);
+
+  const resp = await axios.post(
+    `https://api.telegram.org/bot${accessToken}/setChatMenuButton`,
+    {
+      menu_button: {
+        type: "web_app",
+        text: "Launch Webapp",
+        web_app: {
+          url: url,
+        },
+      },
     }
-}
+  ).catch(exitError);
 
-// Запуск кулдауна
-function startCooldown() {
-    let timer = cooldown;
-    const interval = setInterval(() => {
-        timer--;
-        if (timer <= 0) {
-            clearInterval(interval);
-            canClick = true;
-            coinButton.disabled = false;
-        }
-    }, 1000);
-}
-
-// Загрузка прогресса при открытии страницы
-loadUserProgress();
-
+  if (resp.status === 200) {
+    console.log(
+      `\nYou're all set! Visit https://t.me/${botUsername} to interact with your bot`
+    );
+    process.exit();
+  } else {
+    exitError(`\nSomething went wrong! ${resp.error}`);
+  }
+})();
